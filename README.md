@@ -1,0 +1,18 @@
+# Files App
+
+Một ứng dụng quản lý tệp tin (Files) mã nguồn mở, được thiết kế và tối ưu đặc biệt cho các hệ máy chơi game cầm tay (như Trimui Brick Pro, TrimUI Smart Pro).
+
+## 🌟 Tính năng chính
+- Duyệt và quản lý tệp tin, thư mục dễ dàng.
+- Các thao tác cơ bản: Copy (Sao chép), Move (Di chuyển), Rename (Đổi tên), Delete (Xóa).
+- Giao diện cổ điển theo tông màu ấm (Warm retro palette) với icon trực quan.
+- Tích hợp trình xem/chỉnh sửa văn bản cơ bản (Text Editor).
+- Hỗ trợ thao tác hoàn toàn bằng phím hoặc joystick gamepad.
+
+## 📜 Tuyên bố Mã nguồn mở (Open Source) & Bản quyền
+Dự án này là mã nguồn mở và được phát hành dưới giấy phép **MIT License**. Bạn hoàn toàn có thể tự do sử dụng, học hỏi, sao chép hoặc phát triển thêm.
+
+- **Tác giả gốc (Original Creator):** Nguyễn Ngọc Cường
+- **Email liên hệ:** nn.cuong.404@gmail.com
+
+Khi sử dụng lại hoặc tùy biến mã nguồn này, vui lòng giữ nguyên thông tin tác giả và bản quyền gốc theo quy định của giấy phép MIT đính kèm trong repository này.

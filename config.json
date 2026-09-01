@@ -1,0 +1,9 @@
+{
+  "package": "com.trimui.files",
+  "label": "Files",
+  "label.ch.lang": "文件",
+  "icontop": "icon.png",
+  "icon": "",
+  "launch": "launch.sh",
+  "description": "A feature-rich File Manager for TrimUI."
+}
