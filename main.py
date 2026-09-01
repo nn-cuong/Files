@@ -484,14 +484,24 @@ def main():
         if state == STATE_BROWSE:
             if dpad_up_held:
                 if dpad_timer == 0 or (dpad_timer > 20 and dpad_timer % 4 == 0):
-                    sel_index = max(0, sel_index - 1)
-                    if sel_index < scroll_y: scroll_y = sel_index
+                    if len(list_items) > 0:
+                        if sel_index == 0:
+                            sel_index = len(list_items) - 1
+                            scroll_y = max(0, len(list_items) - visible_items)
+                        else:
+                            sel_index -= 1
+                            if sel_index < scroll_y: scroll_y = sel_index
                     needs_redraw = True
                 dpad_timer += 1
             elif dpad_down_held:
                 if dpad_timer == 0 or (dpad_timer > 20 and dpad_timer % 4 == 0):
-                    sel_index = min(len(list_items) - 1, sel_index + 1)
-                    if sel_index >= scroll_y + visible_items: scroll_y = sel_index - visible_items + 1
+                    if len(list_items) > 0:
+                        if sel_index == len(list_items) - 1:
+                            sel_index = 0
+                            scroll_y = 0
+                        else:
+                            sel_index += 1
+                            if sel_index >= scroll_y + visible_items: scroll_y = sel_index - visible_items + 1
                     needs_redraw = True
                 dpad_timer += 1
         elif state == STATE_EDITOR and editor_mode == 'NAV':
