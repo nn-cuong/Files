@@ -87,9 +87,12 @@ def main():
     sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_JOYSTICK | sdl2.SDL_INIT_GAMECONTROLLER)
     sdlttf.TTF_Init()
 
+    controllers = []
     for i in range(sdl2.SDL_NumJoysticks()):
         if sdl2.SDL_IsGameController(i):
-            sdl2.SDL_GameControllerOpen(i)
+            c = sdl2.SDL_GameControllerOpen(i)
+            if c:
+                controllers.append(c)
 
     window = sdl2.ext.Window("FileManager", size=(1024, 768), flags=sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP)
     window.show()
@@ -166,7 +169,10 @@ def main():
     
     dpad_up_held = False
     dpad_down_held = False
+    dpad_left_held = False
+    dpad_right_held = False
     dpad_timer = 0
+    dpad_horiz_timer = 0
     
     preview_path = None
     preview_tex = None
@@ -182,6 +188,28 @@ def main():
     running = True
     while running:
         needs_redraw = True
+        
+        # Poll Joystick Axes
+        axis_up = False
+        axis_down = False
+        axis_left = False
+        axis_right = False
+        for c in controllers:
+            lx = sdl2.SDL_GameControllerGetAxis(c, sdl2.SDL_CONTROLLER_AXIS_LEFTX)
+            ly = sdl2.SDL_GameControllerGetAxis(c, sdl2.SDL_CONTROLLER_AXIS_LEFTY)
+            rx = sdl2.SDL_GameControllerGetAxis(c, sdl2.SDL_CONTROLLER_AXIS_RIGHTX)
+            ry = sdl2.SDL_GameControllerGetAxis(c, sdl2.SDL_CONTROLLER_AXIS_RIGHTY)
+            ax = lx if abs(lx) >= abs(rx) else rx
+            ay = ly if abs(ly) >= abs(ry) else ry
+            if ay < -15000: axis_up = True
+            elif ay > 15000: axis_down = True
+            if ax < -15000: axis_left = True
+            elif ax > 15000: axis_right = True
+
+        is_up = dpad_up_held or axis_up
+        is_down = dpad_down_held or axis_down
+        is_left = dpad_left_held or axis_left
+        is_right = dpad_right_held or axis_right
         events = sdl2.ext.get_events()
         if len(events) > 0:
             needs_redraw = True
@@ -222,6 +250,10 @@ def main():
                     dpad_up_held = False
                 elif btn == sdl2.SDL_CONTROLLER_BUTTON_DPAD_DOWN:
                     dpad_down_held = False
+                elif btn == sdl2.SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+                    dpad_left_held = False
+                elif btn == sdl2.SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+                    dpad_right_held = False
             elif event.type == sdl2.SDL_CONTROLLERBUTTONDOWN:
                 btn = event.cbutton.button
                 
@@ -236,6 +268,12 @@ def main():
                     elif btn == sdl2.SDL_CONTROLLER_BUTTON_DPAD_DOWN:
                         dpad_down_held = True
                         dpad_timer = 0
+                    elif btn == sdl2.SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+                        dpad_left_held = True
+                        dpad_horiz_timer = 0
+                    elif btn == sdl2.SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+                        dpad_right_held = True
+                        dpad_horiz_timer = 0
                     elif btn == sdl2.SDL_CONTROLLER_BUTTON_LEFTSHOULDER: # Page Up
                         sel_index = max(0, sel_index - visible_items)
                         scroll_y = max(0, scroll_y - visible_items)
@@ -482,8 +520,8 @@ def main():
 
         # Key repeat logic outside events
         if state == STATE_BROWSE:
-            if dpad_up_held:
-                if dpad_timer == 0 or (dpad_timer > 20 and dpad_timer % 4 == 0):
+            if is_up:
+                if dpad_timer == 0 or (dpad_timer > 15 and dpad_timer % 3 == 0):
                     if len(list_items) > 0:
                         if sel_index == 0:
                             sel_index = len(list_items) - 1
@@ -493,8 +531,8 @@ def main():
                             if sel_index < scroll_y: scroll_y = sel_index
                     needs_redraw = True
                 dpad_timer += 1
-            elif dpad_down_held:
-                if dpad_timer == 0 or (dpad_timer > 20 and dpad_timer % 4 == 0):
+            elif is_down:
+                if dpad_timer == 0 or (dpad_timer > 15 and dpad_timer % 3 == 0):
                     if len(list_items) > 0:
                         if sel_index == len(list_items) - 1:
                             sel_index = 0
@@ -504,19 +542,126 @@ def main():
                             if sel_index >= scroll_y + visible_items: scroll_y = sel_index - visible_items + 1
                     needs_redraw = True
                 dpad_timer += 1
-        elif state == STATE_EDITOR and editor_mode == 'NAV':
-            if dpad_up_held:
-                if dpad_timer == 0 or (dpad_timer > 20 and dpad_timer % 4 == 0):
-                    editor_cy = max(0, editor_cy - 1)
-                    editor_cx = min(editor_cx, len(editor_lines[editor_cy]))
+            else:
+                dpad_timer = 0
+
+            if is_left:
+                if dpad_horiz_timer == 0 or (dpad_horiz_timer > 15 and dpad_horiz_timer % 4 == 0):
+                    sel_index = max(0, sel_index - visible_items)
+                    scroll_y = max(0, scroll_y - visible_items)
+                    needs_redraw = True
+                dpad_horiz_timer += 1
+            elif is_right:
+                if dpad_horiz_timer == 0 or (dpad_horiz_timer > 15 and dpad_horiz_timer % 4 == 0):
+                    sel_index = min(len(list_items) - 1, sel_index + visible_items)
+                    scroll_y = min(max(0, len(list_items) - visible_items), scroll_y + visible_items)
+                    needs_redraw = True
+                dpad_horiz_timer += 1
+            else:
+                dpad_horiz_timer = 0
+
+        elif state == STATE_OPTIONS:
+            if is_up:
+                if dpad_timer == 0 or (dpad_timer > 15 and dpad_timer % 4 == 0):
+                    opt_index = (opt_index - 1) % len(options_menu)
                     needs_redraw = True
                 dpad_timer += 1
-            elif dpad_down_held:
-                if dpad_timer == 0 or (dpad_timer > 20 and dpad_timer % 4 == 0):
-                    editor_cy = min(len(editor_lines) - 1, editor_cy + 1)
-                    editor_cx = min(editor_cx, len(editor_lines[editor_cy]))
+            elif is_down:
+                if dpad_timer == 0 or (dpad_timer > 15 and dpad_timer % 4 == 0):
+                    opt_index = (opt_index + 1) % len(options_menu)
                     needs_redraw = True
                 dpad_timer += 1
+            else:
+                dpad_timer = 0
+
+        elif state == STATE_RENAME:
+            current_keys = osk_keys_lower if osk_mode == 0 else (osk_keys_upper if osk_mode == 1 else osk_keys_symbols)
+            if is_up:
+                if dpad_timer == 0 or (dpad_timer > 15 and dpad_timer % 4 == 0):
+                    osk_y = (osk_y - 1) % 4
+                    osk_x = min(osk_x, len(current_keys[osk_y]) - 1)
+                    needs_redraw = True
+                dpad_timer += 1
+            elif is_down:
+                if dpad_timer == 0 or (dpad_timer > 15 and dpad_timer % 4 == 0):
+                    osk_y = (osk_y + 1) % 4
+                    osk_x = min(osk_x, len(current_keys[osk_y]) - 1)
+                    needs_redraw = True
+                dpad_timer += 1
+            else:
+                dpad_timer = 0
+
+            if is_left:
+                if dpad_horiz_timer == 0 or (dpad_horiz_timer > 15 and dpad_horiz_timer % 4 == 0):
+                    osk_x = (osk_x - 1) % len(current_keys[osk_y])
+                    needs_redraw = True
+                dpad_horiz_timer += 1
+            elif is_right:
+                if dpad_horiz_timer == 0 or (dpad_horiz_timer > 15 and dpad_horiz_timer % 4 == 0):
+                    osk_x = (osk_x + 1) % len(current_keys[osk_y])
+                    needs_redraw = True
+                dpad_horiz_timer += 1
+            else:
+                dpad_horiz_timer = 0
+
+        elif state == STATE_EDITOR:
+            if editor_mode == 'NAV':
+                if is_up:
+                    if dpad_timer == 0 or (dpad_timer > 15 and dpad_timer % 3 == 0):
+                        editor_cy = max(0, editor_cy - 1)
+                        editor_cx = min(editor_cx, len(editor_lines[editor_cy]))
+                        needs_redraw = True
+                    dpad_timer += 1
+                elif is_down:
+                    if dpad_timer == 0 or (dpad_timer > 15 and dpad_timer % 3 == 0):
+                        editor_cy = min(len(editor_lines) - 1, editor_cy + 1)
+                        editor_cx = min(editor_cx, len(editor_lines[editor_cy]))
+                        needs_redraw = True
+                    dpad_timer += 1
+                else:
+                    dpad_timer = 0
+
+                if is_left:
+                    if dpad_horiz_timer == 0 or (dpad_horiz_timer > 15 and dpad_horiz_timer % 3 == 0):
+                        editor_cx = max(0, editor_cx - 1)
+                        needs_redraw = True
+                    dpad_horiz_timer += 1
+                elif is_right:
+                    if dpad_horiz_timer == 0 or (dpad_horiz_timer > 15 and dpad_horiz_timer % 3 == 0):
+                        editor_cx = min(len(editor_lines[editor_cy]), editor_cx + 1)
+                        needs_redraw = True
+                    dpad_horiz_timer += 1
+                else:
+                    dpad_horiz_timer = 0
+            elif editor_mode == 'OSK':
+                current_keys = osk_keys_lower if osk_mode == 0 else (osk_keys_upper if osk_mode == 1 else osk_keys_symbols)
+                if is_up:
+                    if dpad_timer == 0 or (dpad_timer > 15 and dpad_timer % 4 == 0):
+                        osk_y = (osk_y - 1) % 4
+                        osk_x = min(osk_x, len(current_keys[osk_y]) - 1)
+                        needs_redraw = True
+                    dpad_timer += 1
+                elif is_down:
+                    if dpad_timer == 0 or (dpad_timer > 15 and dpad_timer % 4 == 0):
+                        osk_y = (osk_y + 1) % 4
+                        osk_x = min(osk_x, len(current_keys[osk_y]) - 1)
+                        needs_redraw = True
+                    dpad_timer += 1
+                else:
+                    dpad_timer = 0
+
+                if is_left:
+                    if dpad_horiz_timer == 0 or (dpad_horiz_timer > 15 and dpad_horiz_timer % 4 == 0):
+                        osk_x = (osk_x - 1) % len(current_keys[osk_y])
+                        needs_redraw = True
+                    dpad_horiz_timer += 1
+                elif is_right:
+                    if dpad_horiz_timer == 0 or (dpad_horiz_timer > 15 and dpad_horiz_timer % 4 == 0):
+                        osk_x = (osk_x + 1) % len(current_keys[osk_y])
+                        needs_redraw = True
+                    dpad_horiz_timer += 1
+                else:
+                    dpad_horiz_timer = 0
                 
         if state == STATE_EDITOR:
             if editor_cy < editor_scroll_y:
