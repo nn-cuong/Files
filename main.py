@@ -257,11 +257,16 @@ def main():
             elif event.type == sdl2.SDL_CONTROLLERBUTTONDOWN:
                 btn = event.cbutton.button
                 
-                if btn == sdl2.SDL_CONTROLLER_BUTTON_START:
+                if state == STATE_QUIT_CONFIRM:
+                    if btn == sdl2.SDL_CONTROLLER_BUTTON_B: # Physical A - Confirm
+                        running = False
+                    elif btn in (sdl2.SDL_CONTROLLER_BUTTON_A, sdl2.SDL_CONTROLLER_BUTTON_START): # Physical B or START - Cancel
+                        state = state_before_quit
+                elif btn == sdl2.SDL_CONTROLLER_BUTTON_START:
                     state_before_quit = state
                     state = STATE_QUIT_CONFIRM
                     
-                if state == STATE_BROWSE:
+                elif state == STATE_BROWSE:
                     if btn == sdl2.SDL_CONTROLLER_BUTTON_DPAD_UP:
                         dpad_up_held = True
                         dpad_timer = 0
@@ -371,12 +376,6 @@ def main():
                         refresh_list()
                         sel_index = min(sel_index, max(0, len(list_items) - 1))
                         state = STATE_BROWSE
-                        
-                elif state == STATE_QUIT_CONFIRM:
-                    if btn == sdl2.SDL_CONTROLLER_BUTTON_B: # Physical A - Confirm
-                        running = False
-                    elif btn == sdl2.SDL_CONTROLLER_BUTTON_A: # Physical B - Cancel
-                        state = state_before_quit
                         
                 elif state == STATE_RENAME:
                     current_keys = osk_keys_lower if osk_mode == 0 else (osk_keys_upper if osk_mode == 1 else osk_keys_symbols)
