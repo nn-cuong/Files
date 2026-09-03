@@ -260,7 +260,7 @@ def main():
                 if state == STATE_QUIT_CONFIRM:
                     if btn == sdl2.SDL_CONTROLLER_BUTTON_B: # Physical A - Confirm
                         running = False
-                    elif btn in (sdl2.SDL_CONTROLLER_BUTTON_A, sdl2.SDL_CONTROLLER_BUTTON_START): # Physical B or START - Cancel
+                    elif btn == sdl2.SDL_CONTROLLER_BUTTON_A: # Physical B - Cancel
                         state = state_before_quit
                 elif btn == sdl2.SDL_CONTROLLER_BUTTON_START:
                     state_before_quit = state
@@ -803,20 +803,23 @@ def main():
                 
         elif state == STATE_QUIT_CONFIRM:
             sdl2.SDL_SetRenderDrawBlendMode(renderer.sdlrenderer, sdl2.SDL_BLENDMODE_BLEND)
-            sdl2.SDL_SetRenderDrawColor(renderer.sdlrenderer, *FM_TEXT, 110)
+            sdl2.SDL_SetRenderDrawColor(renderer.sdlrenderer, 0, 0, 0, 150)
             sdl2.SDL_RenderFillRect(renderer.sdlrenderer, sdl2.SDL_Rect(0, 0, w_w, w_h))
             
             pop_w, pop_h = 600, 200
             pop_x, pop_y = (w_w - pop_w)//2, (w_h - pop_h)//2
-            renderer.fill((pop_x, pop_y, pop_w, pop_h), POPUP_BG)
-            renderer.fill((pop_x, pop_y, pop_w, 2), sdl2.ext.Color(*FM_GRID))
             
-            tex, tw, th = render_text("Exit Files?", font_large, TEXT_COLOR)
+            renderer.fill((pop_x, pop_y, pop_w, pop_h), SEL_BORDER)
+            renderer.fill((pop_x+2, pop_y+2, pop_w-4, pop_h-4), BG_COLOR)
+            
+            msg = "Exit Files?"
+            tex, tw, th = render_text(msg, font_large, TEXT_COLOR)
             if tex:
                 sdl2.SDL_RenderCopy(renderer.sdlrenderer, tex, None, sdl2.SDL_Rect(pop_x + pop_w//2 - tw//2, pop_y + 40, tw, th))
                 sdl2.SDL_DestroyTexture(tex)
                 
-            tex, tw, th = render_text("A: Confirm   B: Cancel", font_medium, TEXT_DIM)
+            msg2 = "A: Confirm   B: Cancel"
+            tex, tw, th = render_text(msg2, font_medium, TEXT_DIM)
             if tex:
                 sdl2.SDL_RenderCopy(renderer.sdlrenderer, tex, None, sdl2.SDL_Rect(pop_x + pop_w//2 - tw//2, pop_y + 120, tw, th))
                 sdl2.SDL_DestroyTexture(tex)
