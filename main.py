@@ -915,7 +915,7 @@ def main():
         # Footer hints
         if state == STATE_BROWSE:
             paste_hint = "| X/Y: Paste " if clipboard else ""
-            footer = f"D-PAD: Navigate | A: Enter | B: Back | SELECT: Options {paste_hint}| START: Exit"
+            footer = f"DPAD: Navigate | A: Enter | B: Back | SELECT: Options {paste_hint}| START: Exit"
             tex, tw, th = render_text(footer, font_small, TEXT_COLOR)
             if tex:
                 sdl2.SDL_RenderCopy(renderer.sdlrenderer, tex, None, sdl2.SDL_Rect(20, w_h - 40, tw, th))
